@@ -28,6 +28,7 @@ var path = require('path')
 var statuses = require('statuses')
 var Stream = require('stream')
 var util = require('util')
+var {npath} = require('@yarnpkg/fslib')
 
 /**
  * Path function references.
@@ -142,7 +143,7 @@ function SendStream(req, path, options) {
 	this._maxage = typeof this._maxage === 'string' ? ms(this._maxage) : Number(this._maxage)
 	this._maxage = !isNaN(this._maxage) ? Math.min(Math.max(0, this._maxage), MAX_MAXAGE) : 0
 
-	this._root = opts.root ? resolve(opts.root) : null
+	this._root = opts.root ? this._fs.resolve(opts.root) : null
 
 	if (!this._root && opts.from) {
 		this.from(opts.from)
@@ -209,7 +210,7 @@ SendStream.prototype.index = deprecate.function(function index(paths) {
  */
 
 SendStream.prototype.root = function root(path) {
-	this._root = resolve(String(path))
+	this._root = this._fs.resolve(String(path))
 	debug('root %s', this._root)
 	return this
 }
@@ -545,7 +546,7 @@ SendStream.prototype.pipe = function pipe(res) {
 		parts = normalize(path).split(sep)
 
 		// resolve the path
-		path = resolve(path)
+		path = this._fs.resolve(path)
 	}
 
 	// dotfile handling
@@ -703,7 +704,7 @@ SendStream.prototype.sendFile = function sendFile(path) {
 	var self = this
 
 	debug('stat "%s"', path)
-	this._fs.statPromise(path).then(
+	this._fs.statPromise(npath.toPortablePath(path)).then(
 		(stat) => {
 			if (stat.isDirectory()) return self.redirect(path)
 			self.emit('file', path, stat)
@@ -726,7 +727,7 @@ SendStream.prototype.sendFile = function sendFile(path) {
 		var p = path + '.' + self._extensions[i++]
 
 		debug('stat "%s"', p)
-		self._fs.statPromise(p).then(
+		self._fs.statPromise(npath.toPortablePath(p)).then(
 			(stat) => {
 				if (stat.isDirectory()) return next()
 				self.emit('file', p, stat)
@@ -758,7 +759,7 @@ SendStream.prototype.sendIndex = function sendIndex(path) {
 		var p = join(path, self._index[i])
 
 		debug('stat "%s"', p)
-		self._fs.statPromise(p).then(
+		self._fs.statPromise(npath.toPortablePath(p)).then(
 			(stat) => {
 				if (stat.isDirectory()) return next()
 				self.emit('file', p, stat)
@@ -788,7 +789,7 @@ SendStream.prototype.stream = function stream(path, options) {
 	var res = this.res
 
 	// pipe
-	var stream = this._fs.createReadStream(path, options)
+	var stream = this._fs.createReadStream(npath.toPortablePath(path), options)
 	this.emit('stream', stream)
 	stream.pipe(res)
 
