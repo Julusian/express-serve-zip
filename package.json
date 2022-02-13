@@ -1,27 +1,27 @@
 {
   "name": "express-serve-zip",
   "description": "Serve static files from a zip",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Douglas Christopher Wilson <doug@somethingdoug.com>",
   "license": "MIT",
   "repository": "julusian/express-serve-zip",
   "dependencies": {
-		"@yarnpkg/fslib": "^2.6.1-rc.9",
-		"@yarnpkg/libzip": "^2.2.3-rc.9",
-		"debug": "2.6.9",
-		"depd": "~1.1.2",
-		"destroy": "~1.0.4",
-		"encodeurl": "~1.0.2",
-		"escape-html": "~1.0.3",
-		"etag": "~1.8.1",
-		"fresh": "0.5.2",
-		"http-errors": "1.8.1",
-		"mime": "1.6.0",
-		"ms": "2.1.3",
-		"on-finished": "~2.3.0",
-		"parseurl": "~1.3.3",
-		"range-parser": "~1.2.1",
-		"statuses": "~1.5.0"
+    "@yarnpkg/fslib": "^2.6.1-rc.9",
+    "@yarnpkg/libzip": "^2.2.3-rc.9",
+    "debug": "2.6.9",
+    "depd": "~1.1.2",
+    "destroy": "~1.0.4",
+    "encodeurl": "~1.0.2",
+    "escape-html": "~1.0.3",
+    "etag": "~1.8.1",
+    "fresh": "0.5.2",
+    "http-errors": "1.8.1",
+    "mime": "1.6.0",
+    "ms": "2.1.3",
+    "on-finished": "~2.3.0",
+    "parseurl": "~1.3.3",
+    "range-parser": "~1.2.1",
+    "statuses": "~1.5.0"
   },
   "devDependencies": {
     "eslint": "7.32.0",
@@ -46,7 +46,6 @@
     "lint": "eslint .",
     "test": "mocha --reporter spec --bail --check-leaks test/",
     "test-ci": "nyc --reporter=lcov --reporter=text npm test",
-    "test-cov": "nyc --reporter=html --reporter=text npm test",
-    "version": "node scripts/version-history.js && git add HISTORY.md"
+    "test-cov": "nyc --reporter=html --reporter=text npm test"
   }
 }
