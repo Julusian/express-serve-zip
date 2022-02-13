@@ -20,7 +20,7 @@ var resolve = require('path').resolve
 var send = require('./send')
 var url = require('url')
 
-const { ZipFS } = require('@yarnpkg/fslib')
+const { ZipFS,npath } = require('@yarnpkg/fslib')
 const { getLibzipSync } = require('@yarnpkg/libzip')
 
 /**
@@ -70,7 +70,7 @@ function serveStatic(root, options) {
 	// construct directory listener
 	var onDirectory = redirect ? createRedirectDirectoryListener() : createNotFoundDirectoryListener()
 
-	const zipFs = new ZipFS(root, {
+	const zipFs = new ZipFS(npath.toPortablePath(root), {
 		libzip: getLibzipSync(),
 		readOnlyArchives: true,
 	})
