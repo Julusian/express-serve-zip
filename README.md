@@ -3,7 +3,7 @@
 [![NPM Version][npm-version-image]][npm-url]
 [![NPM Downloads][npm-downloads-image]][npm-url]
 
-Based on [serve-static v1.14.2](https://www.npmjs.com/package/serve-static) and [send v0.18.0](https://www.npmjs.com/package/send).  
+Based on [serve-static v1.15.0](https://www.npmjs.com/package/serve-static) and [send v0.18.0](https://www.npmjs.com/package/send).  
 Using [@yarnpkg/fslib](https://www.npmjs.com/package/@yarnpkg/fslib) for virtual filesystem support
 
 ## Install
