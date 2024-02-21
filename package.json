@@ -1,7 +1,7 @@
 {
   "name": "express-serve-zip",
   "description": "Serve static files from a zip",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "author": "Douglas Christopher Wilson <doug@somethingdoug.com>",
   "license": "MIT",
   "repository": "julusian/express-serve-zip",
