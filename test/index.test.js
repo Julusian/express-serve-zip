@@ -105,15 +105,15 @@ let testZipPath;
 beforeAll(async () => {
   // Dynamic imports so vitest can still parse the file as ESM even though the
   // underlying packages are CJS.
-  const { ZipFS, npath } = await import("@yarnpkg/fslib");
-  const { getLibzipSync } = await import("@yarnpkg/libzip");
+  const { npath } = await import("@yarnpkg/fslib");
+  const { ZipFS } = await import("@yarnpkg/libzip");
 
   testZipPath = path.join(
     os.tmpdir(),
     `express-serve-zip-test-${process.pid}.zip`,
   );
 
-  const zipFs = new ZipFS(null, { libzip: getLibzipSync() });
+  const zipFs = new ZipFS(null);
 
   // Directories
   zipFs.mkdirSync(npath.toPortablePath("/subdir"));

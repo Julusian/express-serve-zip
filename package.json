@@ -6,9 +6,9 @@
   "license": "MIT",
   "repository": "julusian/express-serve-zip",
   "dependencies": {
-    "@yarnpkg/fslib": "^2.7.0",
-    "@yarnpkg/libzip": "^2.2.4",
-    "debug": "^4.3.4",
+    "@yarnpkg/fslib": "^3.1.5",
+    "@yarnpkg/libzip": "^3.2.2",
+    "debug": "^4.4.3",
     "depd": "~2.0.0",
     "destroy": "~1.2.0",
     "encodeurl": "~1.0.2",
