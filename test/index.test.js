@@ -184,11 +184,6 @@ describe("serveStatic()", () => {
       expect(typeof mw).toBe("function");
       expect(mw.length).toBe(3);
     });
-
-    it("exposes the mime module", () => {
-      expect(serveStatic.mime).toBeDefined();
-      expect(typeof serveStatic.mime.lookup).toBe("function");
-    });
   });
 
   // -------------------------------------------------------------------------

@@ -29,7 +29,6 @@ const { ZipFS } = require('@yarnpkg/libzip')
  */
 
 module.exports = serveStatic
-module.exports.mime = send.mime
 
 /**
  * @param {string} root
@@ -38,110 +37,114 @@ module.exports.mime = send.mime
  * @public
  */
 
-function serveStatic(root, options) {
-	if (!root) {
-		throw new TypeError('root path required')
-	}
+function serveStatic (root, options) {
+  if (!root) {
+    throw new TypeError('root path required')
+  }
 
-	if (typeof root !== 'string') {
-		throw new TypeError('root path must be a string')
-	}
+  if (typeof root !== 'string') {
+    throw new TypeError('root path must be a string')
+  }
 
-	// copy options object
-	var opts = Object.create(options || null)
+  // copy options object
+  var opts = Object.create(options || null)
 
-	// fall-though
-	var fallthrough = opts.fallthrough !== false
+  // fall-though
+  var fallthrough = opts.fallthrough !== false
 
-	// default redirect
-	var redirect = opts.redirect !== false
+  // default redirect
+  var redirect = opts.redirect !== false
 
-	// headers listener
-	var setHeaders = opts.setHeaders
+  // headers listener
+  var setHeaders = opts.setHeaders
 
-	if (setHeaders && typeof setHeaders !== 'function') {
-		throw new TypeError('option setHeaders must be function')
-	}
+  if (setHeaders && typeof setHeaders !== 'function') {
+    throw new TypeError('option setHeaders must be function')
+  }
 
-	// setup options for send
-	opts.maxage = opts.maxage || opts.maxAge || 0
-	// opts.root = resolve(root)
+  // setup options for send
+  opts.maxage = opts.maxage || opts.maxAge || 0
+  // opts.root = resolve(root)
 
-	// construct directory listener
-	var onDirectory = redirect ? createRedirectDirectoryListener() : createNotFoundDirectoryListener()
+  // construct directory listener
+  var onDirectory = redirect
+    ? createRedirectDirectoryListener()
+    : createNotFoundDirectoryListener()
 
-	const zipFs = new ZipFS(npath.toPortablePath(root), { readOnly: true })
-	opts.fs = zipFs
+  const zipFs = new ZipFS(npath.toPortablePath(root), { readOnly: true })
+  opts.fs = zipFs
 
-	return function serveStatic(req, res, next) {
-		if (req.method !== 'GET' && req.method !== 'HEAD') {
-			if (fallthrough) {
-				return next()
-			}
+  return function serveStatic (req, res, next) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      if (fallthrough) {
+        return next()
+      }
 
-			// method not allowed
-			res.statusCode = 405
-			res.setHeader('Allow', 'GET, HEAD')
-			res.setHeader('Content-Length', '0')
-			res.end()
-			return
-		}
+      // method not allowed
+      res.statusCode = 405
+      res.setHeader('Allow', 'GET, HEAD')
+      res.setHeader('Content-Length', '0')
+      res.end()
+      return
+    }
 
-		var forwardError = !fallthrough
-		var originalUrl = parseUrl.original(req)
-		var path = parseUrl(req).pathname
+    var forwardError = !fallthrough
+    var originalUrl = parseUrl.original(req)
+    var path = parseUrl(req).pathname
 
-		// make sure redirect occurs at mount
-		if (path === '/' && originalUrl.pathname.substr(-1) !== '/') {
-			path = ''
-		}
+    // make sure redirect occurs at mount
+    if (path === '/' && originalUrl.pathname.substr(-1) !== '/') {
+      path = ''
+    }
 
-		// create send stream
-		var stream = send(req, path, opts)
+    // create send stream
+    var stream = send(req, path, opts)
 
-		// add directory handler
-		stream.on('directory', onDirectory)
+    // add directory handler
+    stream.on('directory', onDirectory)
 
-		// add headers listener
-		if (setHeaders) {
-			stream.on('headers', setHeaders)
-		}
+    // add headers listener
+    if (setHeaders) {
+      stream.on('headers', setHeaders)
+    }
 
-		// add file listener for fallthrough
-		if (fallthrough) {
-			stream.on('file', function onFile() {
-				// once file is determined, always forward error
-				forwardError = true
-			})
-		}
+    // add file listener for fallthrough
+    if (fallthrough) {
+      stream.on('file', function onFile () {
+        // once file is determined, always forward error
+        forwardError = true
+      })
+    }
 
-		// forward errors
-		stream.on('error', function error(err) {
-			if (forwardError || !(err.statusCode < 500)) {
-				next(err)
-				return
-			}
+    // forward errors
+    stream.on('error', function error (err) {
+      if (forwardError || !(err.statusCode < 500)) {
+        next(err)
+        return
+      }
 
-			next()
-		})
+      next()
+    })
 
-		// pipe
-		stream.pipe(res)
-	}
+    // pipe
+    stream.pipe(res)
+  }
 }
 
 /**
  * Collapse all leading slashes into a single slash
  * @private
  */
-function collapseLeadingSlashes(str) {
-	for (var i = 0; i < str.length; i++) {
-		if (str.charCodeAt(i) !== 0x2f /* / */) {
-			break
-		}
-	}
+function collapseLeadingSlashes (str) {
+  for (var i = 0; i < str.length; i++) {
+    if (str.charCodeAt(i) !== 0x2f /* / */) {
+      break
+    }
+  }
 
-	return i > 1 ? '/' + str.substr(i) : str
+  return i > 1
+    ? '/' + str.substr(i)
+    : str
 }
 
 /**
@@ -152,23 +155,17 @@ function collapseLeadingSlashes(str) {
  * @private
  */
 
-function createHtmlDocument(title, body) {
-	return (
-		'<!DOCTYPE html>\n' +
-		'<html lang="en">\n' +
-		'<head>\n' +
-		'<meta charset="utf-8">\n' +
-		'<title>' +
-		title +
-		'</title>\n' +
-		'</head>\n' +
-		'<body>\n' +
-		'<pre>' +
-		body +
-		'</pre>\n' +
-		'</body>\n' +
-		'</html>\n'
-	)
+function createHtmlDocument (title, body) {
+  return '<!DOCTYPE html>\n' +
+    '<html lang="en">\n' +
+    '<head>\n' +
+    '<meta charset="utf-8">\n' +
+    '<title>' + title + '</title>\n' +
+    '</head>\n' +
+    '<body>\n' +
+    '<pre>' + body + '</pre>\n' +
+    '</body>\n' +
+    '</html>\n'
 }
 
 /**
@@ -176,10 +173,10 @@ function createHtmlDocument(title, body) {
  * @private
  */
 
-function createNotFoundDirectoryListener() {
-	return function notFound() {
-		this.error(404)
-	}
+function createNotFoundDirectoryListener () {
+  return function notFound () {
+    this.error(404)
+  }
 }
 
 /**
@@ -187,34 +184,31 @@ function createNotFoundDirectoryListener() {
  * @private
  */
 
-function createRedirectDirectoryListener() {
-	return function redirect(res) {
-		if (this.hasTrailingSlash()) {
-			this.error(404)
-			return
-		}
+function createRedirectDirectoryListener () {
+  return function redirect (res) {
+    if (this.hasTrailingSlash()) {
+      this.error(404)
+      return
+    }
 
-		// get original URL
-		var originalUrl = parseUrl.original(this.req)
+    // get original URL
+    var originalUrl = parseUrl.original(this.req)
 
-		// append trailing slash
-		originalUrl.path = null
-		originalUrl.pathname = collapseLeadingSlashes(originalUrl.pathname + '/')
+    // append trailing slash
+    originalUrl.path = null
+    originalUrl.pathname = collapseLeadingSlashes(originalUrl.pathname + '/')
 
-		// reformat the URL
-		var loc = encodeUrl(url.format(originalUrl))
-		var doc = createHtmlDocument(
-			'Redirecting',
-			'Redirecting to <a href="' + escapeHtml(loc) + '">' + escapeHtml(loc) + '</a>'
-		)
+    // reformat the URL
+    var loc = encodeUrl(url.format(originalUrl))
+    var doc = createHtmlDocument('Redirecting', 'Redirecting to ' + escapeHtml(loc))
 
-		// send redirect response
-		res.statusCode = 301
-		res.setHeader('Content-Type', 'text/html; charset=UTF-8')
-		res.setHeader('Content-Length', Buffer.byteLength(doc))
-		res.setHeader('Content-Security-Policy', "default-src 'none'")
-		res.setHeader('X-Content-Type-Options', 'nosniff')
-		res.setHeader('Location', loc)
-		res.end(doc)
-	}
+    // send redirect response
+    res.statusCode = 301
+    res.setHeader('Content-Type', 'text/html; charset=UTF-8')
+    res.setHeader('Content-Length', Buffer.byteLength(doc))
+    res.setHeader('Content-Security-Policy', "default-src 'none'")
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('Location', loc)
+    res.end(doc)
+  }
 }
