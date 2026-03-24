@@ -698,21 +698,53 @@ SendStream.prototype.stream = function stream (path, options) {
   var self = this
   var res = this.res
 
-  // pipe
-  var stream = self._fs.createReadStream(npath.toPortablePath(path), options)
-  this.emit('stream', stream)
-  stream.pipe(res)
+  // ZipFS.createReadStream does not honour start/end options, so we strip them
+  // before the call and apply the byte-range ourselves via a Transform.  This
+  // also guards against a future ZipFS version silently adding support: passing
+  // start/end AND slicing in the Transform would double-slice the data.
+  var rangeStart = options.start !== undefined ? options.start : null
+  var rangeEnd = options.end !== undefined ? options.end : null
+  var fsOptions = Object.assign({}, options)
+  delete fsOptions.start
+  delete fsOptions.end
+
+  var rawStream = self._fs.createReadStream(npath.toPortablePath(path), fsOptions)
+  var outputStream = rawStream
+
+  if (rangeStart !== null || rangeEnd !== null) {
+    var sliceFrom = rangeStart !== null ? rangeStart : 0
+    var sliceTo = rangeEnd !== null ? rangeEnd : Infinity
+    var pos = 0
+    var sliceTransform = new Stream.Transform({
+      transform: function (chunk, encoding, callback) {
+        var chunkEnd = pos + chunk.length
+        if (chunkEnd <= sliceFrom || pos > sliceTo) {
+          pos = chunkEnd
+          return callback()
+        }
+        var sliceStart = Math.max(0, sliceFrom - pos)
+        var sliceEnd = Math.min(chunk.length, sliceTo + 1 - pos)
+        pos = chunkEnd
+        callback(null, chunk.slice(sliceStart, sliceEnd))
+      }
+    })
+    rawStream.pipe(sliceTransform)
+    outputStream = sliceTransform
+  }
+
+  this.emit('stream', rawStream)
+  outputStream.pipe(res)
 
   // cleanup
   function cleanup () {
-    stream.destroy()
+    rawStream.destroy()
   }
 
   // response finished, cleanup
   onFinished(res, cleanup)
 
   // error handling
-  stream.on('error', function onerror (err) {
+  rawStream.on('error', function onerror (err) {
     // clean up stream early
     cleanup()
 
@@ -721,7 +753,7 @@ SendStream.prototype.stream = function stream (path, options) {
   })
 
   // end
-  stream.on('end', function onend () {
+  outputStream.on('end', function onend () {
     self.emit('end')
   })
 }
