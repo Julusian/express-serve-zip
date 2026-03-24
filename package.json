@@ -31,5 +31,11 @@
   "engines": {
     "node": ">= 0.8.0"
   },
-  "scripts": {}
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.1"
+  }
 }
