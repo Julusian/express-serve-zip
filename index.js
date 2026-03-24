@@ -68,7 +68,7 @@ function serveStatic (root, options) {
 
   // construct directory listener
   var onDirectory = redirect
-    ? createRedirectDirectoryListener()
+    ? createRedirectDirectoryListener(opts.prefix)
     : createNotFoundDirectoryListener()
 
   const zipFs = new ZipFS(npath.toPortablePath(root), { readOnly: true })
@@ -181,22 +181,30 @@ function createNotFoundDirectoryListener () {
 
 /**
  * Create a directory listener that performs a redirect.
+ * @param {string} [prefix] - Path prefix to prepend to the redirect location
+ *   (useful when running behind a reverse proxy that strips a path prefix).
  * @private
  */
 
-function createRedirectDirectoryListener () {
+function normalizePrefix (prefix) {
+  return prefix ? '/' + prefix.replace(/^\/+|\/+$/g, '') : ''
+}
+
+function createRedirectDirectoryListener (prefix) {
   return function redirect (res) {
     if (this.hasTrailingSlash()) {
       this.error(404)
       return
     }
 
+    var resolvedPrefix = typeof prefix === 'function' ? normalizePrefix(prefix(this.req)) : normalizePrefix(prefix)
+
     // get original URL
     var originalUrl = parseUrl.original(this.req)
 
-    // append trailing slash
+    // append trailing slash, prepending any reverse-proxy prefix
     originalUrl.path = null
-    originalUrl.pathname = collapseLeadingSlashes(originalUrl.pathname + '/')
+    originalUrl.pathname = collapseLeadingSlashes(resolvedPrefix + originalUrl.pathname + '/')
 
     // reformat the URL
     var loc = encodeUrl(url.format(originalUrl))

@@ -403,6 +403,78 @@ describe("serveStatic()", () => {
     });
   });
 
+  describe("directory handling – prefix option", () => {
+    let fixtureWithSlashes;
+    let fixtureWithoutSlashes;
+    beforeAll(async () => {
+      fixtureWithSlashes = await createFixture({ prefix: "/myapp/" });
+      fixtureWithoutSlashes = await createFixture({ prefix: "myapp" });
+    });
+    afterAll(async () => {
+      await fixtureWithSlashes.close();
+      await fixtureWithoutSlashes.close();
+    });
+
+    it("prepends the prefix to the redirect Location", async () => {
+      const res = await fixtureWithSlashes.request("/subdir");
+      expect(res.status).toBe(301);
+      expect(res.headers["location"]).toMatch(/\/myapp\/subdir\/$/);
+    });
+
+    it("normalises prefix with leading/trailing slashes", async () => {
+      const res = await fixtureWithoutSlashes.request("/subdir");
+      expect(res.status).toBe(301);
+      expect(res.headers["location"]).toMatch(/\/myapp\/subdir\/$/);
+    });
+
+    it("still serves files normally when prefix is set", async () => {
+      const res = await fixtureWithSlashes.request("/hello.txt");
+      expect(res.status).toBe(200);
+      expect(res.text()).toBe("hello world");
+    });
+
+    it("still serves a trailing-slash directory path normally when prefix is set", async () => {
+      const res = await fixtureWithSlashes.request("/subdir/");
+      expect(res.status).toBe(200);
+      expect(res.text()).toBe("subdir index");
+    });
+  });
+
+  describe("directory handling – prefix as function", () => {
+    let fixture;
+    beforeAll(async () => {
+      fixture = await createFixture({
+        prefix: (req) => req.headers["x-prefix"] || "",
+      });
+    });
+    afterAll(async () => {
+      await fixture.close();
+    });
+
+    it("uses the prefix returned by the function for the redirect Location", async () => {
+      const res = await fixture.request("/subdir", {
+        headers: { "x-prefix": "/dynamic" },
+      });
+      expect(res.status).toBe(301);
+      expect(res.headers["location"]).toMatch(/\/dynamic\/subdir\/$/);
+    });
+
+    it("uses no prefix when the function returns an empty string", async () => {
+      const res = await fixture.request("/subdir", {});
+      expect(res.status).toBe(301);
+      expect(res.headers["location"]).not.toMatch(/\/dynamic/);
+      expect(res.headers["location"]).toMatch(/\/subdir\/$/);
+    });
+
+    it("still serves files normally when prefix is a function", async () => {
+      const res = await fixture.request("/hello.txt", {
+        headers: { "x-prefix": "/dynamic" },
+      });
+      expect(res.status).toBe(200);
+      expect(res.text()).toBe("hello world");
+    });
+  });
+
   describe("directory handling – index: false", () => {
     let fixture;
     beforeAll(async () => {
